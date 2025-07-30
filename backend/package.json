@@ -1,0 +1,15 @@
+{
+  "name": "html-to-figma-backend",
+  "version": "1.2.0",
+  "description": "Backend API to convert HTML to Figma clipboard format with native layers",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "jsdom": "^24.0.0"
+  }
+}
