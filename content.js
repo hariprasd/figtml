@@ -1,6 +1,7 @@
 
 async function sendHtmlToServer(html) {
-  const API_ENDPOINT = "http://localhost:8080/convert-html-to-figma";
+  // Use HTTPS since backend now supports HTTPS with mkcert
+  const API_ENDPOINT = "https://localhost:8080/convert-html-to-figma";
   const res = await fetch(API_ENDPOINT, {
     method: "POST",
     headers: {
@@ -21,9 +22,7 @@ function writeClipboard(figmaHtml) {
   });
 }
 
-const port = chrome.runtime.connect({ name: "content-script" });
-
-port.onMessage.addListener(async function(msg) {
+chrome.runtime.onMessage.addListener(async function(msg, sender, sendResponse) {
   if (msg.action === "copy-html-for-figma") {
     try {
       const figmaClipboard = await sendHtmlToServer(msg.html);

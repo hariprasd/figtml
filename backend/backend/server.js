@@ -2,14 +2,91 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
 const { JSDOM } = require('jsdom');
+const https = require('https');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
 
-app.use(cors());
+// Configure CORS to allow all origins and methods
+app.use(cors({
+  origin: true, // Allow all origins
+  credentials: true, // Allow credentials
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
+  optionsSuccessStatus: 200 // Some legacy browsers choke on 204
+}));
+
 app.use(bodyParser.json({ limit: '2mb' }));
 
+// Add preflight handler for OPTIONS requests
+app.options('*', cors());
+
 let nodeId = 1;
+
+// Create simple self-signed certificate
+function createSelfSignedCert() {
+  const certPath = path.join(__dirname, 'cert.pem');
+  const keyPath = path.join(__dirname, 'key.pem');
+  
+  // Check if certificates already exist
+  if (fs.existsSync(certPath) && fs.existsSync(keyPath)) {
+    return {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath)
+    };
+  }
+  
+  // Create simple self-signed certificate using openssl
+  const { execSync } = require('child_process');
+  try {
+    console.log('Creating self-signed certificate...');
+    execSync(`openssl req -x509 -newkey rsa:4096 -keyout ${keyPath} -out ${certPath} -days 365 -nodes -subj "/C=US/ST=CA/L=SF/O=HTML to Figma/CN=localhost"`, { stdio: 'pipe' });
+    
+    return {
+      cert: fs.readFileSync(certPath),
+      key: fs.readFileSync(keyPath)
+    };
+  } catch (error) {
+    console.error('Failed to create certificate with openssl:', error.message);
+    return null;
+  }
+}
+
+// Create HTTPS server
+function createHttpsServer() {
+  try {
+    console.log('Setting up HTTPS server...');
+    
+    const certData = createSelfSignedCert();
+    if (!certData) {
+      throw new Error('Could not create certificates');
+    }
+
+    const httpsServer = https.createServer({
+      key: certData.key,
+      cert: certData.cert
+    }, app);
+
+    httpsServer.listen(PORT, () => {
+      console.log(`✅ HTTPS Backend server running on port ${PORT}`);
+      console.log(`🌐 Visit: https://localhost:${PORT}`);
+      console.log(`🔒 Works on all sites (HTTP & HTTPS)`);
+      console.log(`⚠️  Note: You may see a security warning - click "Advanced" → "Proceed to localhost"`);
+    });
+  } catch (error) {
+    console.error('❌ Failed to create HTTPS server:', error.message);
+    console.log('🔄 Falling back to HTTP server...');
+    
+    // Fallback to HTTP server
+    app.listen(PORT, () => {
+      console.log(`⚠️  HTTP Backend server running on port ${PORT}`);
+      console.log(`🌐 Visit: http://localhost:${PORT}`);
+      console.log(`⚠️  Note: May not work on HTTPS sites due to mixed content`);
+    });
+  }
+}
 
 // Map HTML nodes to Figma scenegraph nodes
 function htmlToFigmaNodes(node, parentId = null, offset = { x: 0, y: 0 }) {
@@ -52,7 +129,8 @@ function htmlToFigmaNodes(node, parentId = null, offset = { x: 0, y: 0 }) {
         figmaNode.type = "TEXT";
         figmaNode.characters = node.textContent.trim();
         figmaNode.fontSize = parseFloat(computedStyle.fontSize);
-        const color = computedStyle.color.match(/(\d+(\.\d+)?)/g).map(Number);
+        const colorMatch = computedStyle.color ? computedStyle.color.match(/(\d+(\.\d+)?)/g) : null;
+        const color = colorMatch ? colorMatch.map(Number) : [0, 0, 0];
         figmaNode.fills = [{ type: 'SOLID', color: { r: color[0] / 255, g: color[1] / 255, b: color[2] / 255 }, opacity: color.length > 3 ? color[3] : 1 }];
         break;
       case 'img':
@@ -149,6 +227,5 @@ app.get('/', (req, res) => {
   res.send('HTML to Figma Clipboard Backend is running (native layers).');
 });
 
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+// Start HTTPS server
+createHttpsServer();
