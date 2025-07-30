@@ -1,3 +1,12 @@
+let port = null;
+
+chrome.runtime.onConnect.addListener(function(p) {
+  port = p;
+  port.onDisconnect.addListener(() => {
+    port = null;
+  });
+});
+
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
     id: "copyToFigmaClipboard",
@@ -7,9 +16,13 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  chrome.tabs.sendMessage(tab.id, { action: "copy-html-for-figma" });
+  if (port) {
+    port.postMessage({ action: "copy-html-for-figma" });
+  }
 });
 
 chrome.action.onClicked.addListener((tab) => {
-  chrome.tabs.sendMessage(tab.id, { action: "copy-html-for-figma" });
+  if (port) {
+    port.postMessage({ action: "copy-html-for-figma" });
+  }
 });
