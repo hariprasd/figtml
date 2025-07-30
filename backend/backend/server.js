@@ -102,13 +102,32 @@ app.post('/convert-html-to-figma', async (req, res) => {
     return res.status(400).send("Missing 'html' field in body.");
   }
   try {
-    const dom = new JSDOM(`<body>${html}</body>`);
-    const body = dom.window.document.body;
-    const nodes = htmlToFigmaNodes(body);
+    const dom = new JSDOM(`<body>${html}</body>`, {
+      resources: 'usable',
+      runScripts: 'dangerously',
+    });
+
+    const { document } = dom.window;
+    const body = document.body;
+
+    // Wait for resources to load
+    const promise = new Promise((resolve) => {
+      if (document.readyState === 'complete') {
+        resolve();
+      } else {
+        dom.window.addEventListener('load', () => {
+          resolve();
+        });
+      }
+    });
+    await promise;
+
+    const nodes = htmlToFigmaNodes(body.firstChild);
     const clipboard = buildFigmaClipboard(nodes);
     res.set('Content-Type', 'text/html; charset=utf-8');
     res.send(clipboard);
   } catch (e) {
+    console.error('Conversion failed:', e);
     res.status(500).send(`Failed to convert HTML to Figma clipboard format: ${e.message}`);
   }
 });
@@ -117,5 +136,8 @@ app.get('/', (req, res) => {
   res.send('HTML to Figma Clipboard Backend is running (native layers).');
 });
 
-// Start HTTPS server
-createHttpsServer();
+if (require.main === module) {
+  createHttpsServer();
+}
+
+module.exports = app;
