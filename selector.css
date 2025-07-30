@@ -1,5 +1,33 @@
 .selected-element {
-  outline: 2px dashed #007bff !important;
-  background-color: rgba(0, 123, 255, 0.1) !important;
-  cursor: pointer !important;
+  outline: 2px solid #007bff !important;
+  outline-offset: 2px;
+  cursor: pointer;
+}
+
+.floating-button {
+  position: fixed;
+  z-index: 999999;
+  padding: 8px 16px;
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.indicator {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: #007bff;
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 4px;
+  z-index: 999998;
+  font-size: 14px;
+  font-family: inherit;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
 }

@@ -1,6 +1,24 @@
+/**
+ * @file This script handles the element selection logic on the page.
+ */
+
+/**
+ * The currently selected HTML element.
+ * @type {HTMLElement|null}
+ */
 let selectedElement = null;
+
+/**
+ * The floating "Copy to Figma" button.
+ * @type {HTMLButtonElement|null}
+ */
 let floatingButton = null;
 
+/**
+ * Starts the element selector.
+ * Adds event listeners for mouseover, mouseout, and click.
+ * Displays a temporary indicator to show that the selector is active.
+ */
 function startSelector() {
   try {
     if (!document.body) return;
@@ -11,17 +29,7 @@ function startSelector() {
     // Show a brief indicator that selector is active
     const indicator = document.createElement('div');
     indicator.textContent = 'Hover to select elements';
-    indicator.style.position = 'fixed';
-    indicator.style.top = '20px';
-    indicator.style.right = '20px';
-    indicator.style.background = '#007bff';
-    indicator.style.color = '#fff';
-    indicator.style.padding = '8px 16px';
-    indicator.style.borderRadius = '4px';
-    indicator.style.zIndex = 999998;
-    indicator.style.fontSize = '14px';
-    indicator.style.fontFamily = 'inherit';
-    indicator.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+    indicator.classList.add('indicator');
     document.body.appendChild(indicator);
     
     // Remove indicator after 3 seconds
@@ -36,6 +44,10 @@ function startSelector() {
   }
 }
 
+/**
+ * Stops the element selector.
+ * Removes event listeners and the "selected-element" class from the selected element.
+ */
 function stopSelector() {
   document.removeEventListener("mouseover", handleMouseOver);
   document.removeEventListener("mouseout", handleMouseOut);
@@ -45,6 +57,11 @@ function stopSelector() {
   }
 }
 
+/**
+ * Handles the mouseover event.
+ * Adds the "selected-element" class to the hovered element.
+ * @param {MouseEvent} e The mouseover event.
+ */
 function handleMouseOver(e) {
   if (selectedElement) {
     selectedElement.classList.remove("selected-element");
@@ -53,6 +70,11 @@ function handleMouseOver(e) {
   selectedElement.classList.add("selected-element");
 }
 
+/**
+ * Handles the mouseout event.
+ * Removes the "selected-element" class from the previously hovered element.
+ * @param {MouseEvent} e The mouseout event.
+ */
 function handleMouseOut(e) {
   if (selectedElement) {
     selectedElement.classList.remove("selected-element");
@@ -60,23 +82,19 @@ function handleMouseOut(e) {
   }
 }
 
+/**
+ * Shows the floating "Copy to Figma" button.
+ * @param {number} x The x-coordinate of the button.
+ * @param {number} y The y-coordinate of the button.
+ * @param {string} html The HTML of the selected element.
+ */
 function showFloatingButton(x, y, html) {
   if (floatingButton) floatingButton.remove();
   floatingButton = document.createElement('button');
   floatingButton.textContent = 'Copy to Figma';
-  floatingButton.style.position = 'fixed';
+  floatingButton.classList.add('floating-button');
   floatingButton.style.left = x + 'px';
   floatingButton.style.top = y + 'px';
-  floatingButton.style.zIndex = 999999;
-  floatingButton.style.padding = '8px 16px';
-  floatingButton.style.background = '#007bff';
-  floatingButton.style.color = '#fff';
-  floatingButton.style.border = 'none';
-  floatingButton.style.borderRadius = '4px';
-  floatingButton.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
-  floatingButton.style.cursor = 'pointer';
-  floatingButton.style.fontSize = '14px';
-  floatingButton.style.fontFamily = 'inherit';
   document.body.appendChild(floatingButton);
 
   floatingButton.onclick = async function(e) {
@@ -121,6 +139,12 @@ function showFloatingButton(x, y, html) {
   };
 }
 
+/**
+ * Handles the click event.
+ * Prevents the default action and stops propagation.
+ * Shows the floating button and stops the selector.
+ * @param {MouseEvent} e The click event.
+ */
 function handleClick(e) {
   e.preventDefault();
   e.stopPropagation();
@@ -131,6 +155,12 @@ function handleClick(e) {
   }
 }
 
+/**
+ * Listens for messages from the extension.
+ * @param {object} msg The message object.
+ * @param {MessageSender} sender The sender of the message.
+ * @param {function} sendResponse The function to call to send a response.
+ */
 chrome.runtime.onMessage.addListener(function (msg, sender, sendResponse) {
   if (msg.action === "start-selector") {
     startSelector();
