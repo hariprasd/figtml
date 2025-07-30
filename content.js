@@ -11,8 +11,7 @@ async function getSelectedHtml() {
 }
 
 async function sendHtmlToServer(html) {
-  // TODO: Replace with your API endpoint
-  const API_ENDPOINT = "https://your-server.com/convert-html-to-figma";
+  const API_ENDPOINT = "http://localhost:8080/convert-html-to-figma";
   const res = await fetch(API_ENDPOINT, {
     method: "POST",
     headers: {
